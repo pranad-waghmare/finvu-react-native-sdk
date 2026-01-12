@@ -47,6 +47,7 @@ export interface FipFiTypeIdentifier {
 export interface FipDetails {
   fipId: string;
   typeIdentifiers: FipFiTypeIdentifier[];
+  linkingOtpLength?: number | null;
 }
 
 // UserInfo
@@ -60,6 +61,7 @@ export interface UserInfo {
 export interface FipDetails {
   fipId: string;
   typeIdentifiers: FipFiTypeIdentifier[];
+  linkingOtpLength?: number | null;
 }
 
 export interface FipFiTypeIdentifier {
@@ -210,6 +212,7 @@ export interface FipFiTypeIdentifier {
 export interface FipDetails {
   fipId: string;
   typeIdentifiers: FipFiTypeIdentifier[];
+  linkingOtpLength?: number | null;
 }
 
 

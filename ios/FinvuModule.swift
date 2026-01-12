@@ -394,12 +394,32 @@ public class FinvuModule: Module {
                         typeIdentifiersArray.append(typeIdentifierDict)
                     }
 
-                    let resultDict: [String: Any] = [
+                    // Use Mirror to safely access linkingOtpLength from native SDK
+                    let mirror = Mirror(reflecting: result)
+                    var linkingOtpLength: Any? = nil
+                    for child in mirror.children {
+                        if child.label == "linkingOtpLength" || child.label == "linkingOTPLength" {
+                            linkingOtpLength = child.value
+                            break
+                        }
+                    }
+                    
+                    // Build result dictionary - ALWAYS include linkingOtpLength
+                    var resultDict: [String: Any] = [
                         "fipId": result.fipId,
                         "typeIdentifiers": typeIdentifiersArray
                     ]
+                    
+                    // ALWAYS add linkingOtpLength - remove any existing and set our value
+                    if let length = linkingOtpLength as? Int {
+                        resultDict["linkingOtpLength"] = length
+                    } else {
+                        // Explicitly use NSNull() to ensure null is serialized in JSON
+                        resultDict["linkingOtpLength"] = NSNull()
+                    }
 
                     do {
+                        // Serialize to JSON - NSNull() will be serialized as null
                         let jsonData = try JSONSerialization.data(withJSONObject: resultDict, options: [])
                         let jsonString = String(data: jsonData, encoding: .utf8)!
                         promise.resolve(jsonString)
@@ -708,7 +728,11 @@ public class FinvuModule: Module {
             }
         }
 
-        let fipDetails =  FIPDetails(fipId: finvuFipDetailsMap["fipId"] as? String ?? "", typeIdenifiers: parsedTypeIdentifiers)
+        // Extract linkingOtpLength if provided - convert Int? to NSNumber?
+        let linkingOtpLengthInt = finvuFipDetailsMap["linkingOtpLength"] as? Int
+        let linkingOtpLength: NSNumber? = linkingOtpLengthInt != nil ? NSNumber(value: linkingOtpLengthInt!) : nil
+        
+        let fipDetails =  FIPDetails(fipId: finvuFipDetailsMap["fipId"] as? String ?? "", typeIdenifiers: parsedTypeIdentifiers, linkingOtpLength: linkingOtpLength)
         // Call SDK
         sdkInstance.linkAccounts(fipDetails: fipDetails, accounts: discoveredAccounts) { result, error in
             DispatchQueue.main.async {

@@ -1,6 +1,6 @@
 {
-  "name": "finvu-react-native-sdk-test",
-  "version": "0.2.0",
+  "name": "finvu-react-native-sdk",
+  "version": "0.2.1",
   "description": "Finvu react native module to integrate Finvu AA micro app.",
   "main": "build/index.js",
   "types": "build/index.d.ts",

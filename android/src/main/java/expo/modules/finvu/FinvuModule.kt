@@ -12,6 +12,9 @@ import expo.modules.kotlin.Promise
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
+import com.google.gson.JsonNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 
@@ -222,8 +225,55 @@ class FinvuModule : Module() {
         sdkInstance.fetchFipDetails(fipId) { result ->
           if (result.isSuccess) {
             val response = result.getOrNull()
-            val json = Gson().toJson(response)
-            promise.resolve(json)
+            val gson = Gson()
+            
+            // Use reflection to safely get linkingOtpLength from the response object
+            val linkingOtpLength = try {
+              response?.javaClass?.let { clazz ->
+                try {
+                  val field = clazz.getDeclaredField("linkingOtpLength")
+                  field.isAccessible = true
+                  field.get(response) as? Int?
+                } catch (e: NoSuchFieldException) {
+                  try {
+                    val field = clazz.getDeclaredField("linkingOTPLength")
+                    field.isAccessible = true
+                    field.get(response) as? Int?
+                  } catch (e2: NoSuchFieldException) {
+                    null
+                  }
+                }
+              } ?: null
+            } catch (e: Exception) {
+              null
+            }
+            
+            // Serialize to JSON string first
+            val jsonString = gson.toJson(response)
+            
+            // Parse to JsonObject - use try-catch with fallback
+            val jsonObject = try {
+              JsonParser().parse(jsonString).asJsonObject
+            } catch (e: Exception) {
+              // Fallback: parse as Map and rebuild as JsonObject
+              val map = gson.fromJson(jsonString, Map::class.java) as Map<*, *>
+              val newMap = mutableMapOf<String, Any?>()
+              map.forEach { (k, v) -> newMap[k.toString()] = v }
+              val tempJson = gson.toJson(newMap)
+              JsonParser().parse(tempJson).asJsonObject
+            }
+            
+            // ALWAYS ensure linkingOtpLength is present - remove existing and add our value
+            jsonObject.remove("linkingOtpLength")
+            if (linkingOtpLength != null) {
+              jsonObject.addProperty("linkingOtpLength", linkingOtpLength)
+            } else {
+              // Explicitly add null value - JsonNull.INSTANCE ensures it's serialized as null
+              jsonObject.add("linkingOtpLength", JsonNull.INSTANCE)
+            }
+            
+            val finalJson = gson.toJson(jsonObject)
+            promise.resolve(finalJson)
           } else {
             val exception = result.exceptionOrNull() as? FinvuException
             val errorCode = mapErrorCode(exception)

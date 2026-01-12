@@ -38,6 +38,7 @@ export interface FipFiTypeIdentifier {
 export interface FipDetails {
     fipId: string;
     typeIdentifiers: FipFiTypeIdentifier[];
+    linkingOtpLength?: number | null;
 }
 export interface UserInfo {
     userId: string;
@@ -47,6 +48,7 @@ export interface UserInfo {
 export interface FipDetails {
     fipId: string;
     typeIdentifiers: FipFiTypeIdentifier[];
+    linkingOtpLength?: number | null;
 }
 export interface FipFiTypeIdentifier {
     fiType: string;
@@ -174,6 +176,7 @@ export interface FipFiTypeIdentifier {
 export interface FipDetails {
     fipId: string;
     typeIdentifiers: FipFiTypeIdentifier[];
+    linkingOtpLength?: number | null;
 }
 /**
  * FIP information interface matching Kotlin data class
